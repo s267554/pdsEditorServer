@@ -298,81 +298,95 @@ void ClientConn::readAnyMessage()
         in >> op;
         switch(op) {
         case 'l':
+            in.startTransaction();
             in >> username;
             in >> password;
-            uniqueId = server->checkCredentials(username, password);
-            if (uniqueId != 0) {
-                isLoggedIn = true;
-                clientPro = server->getProfile(uniqueId);
+            if(in.commitTransaction()){
+                uniqueId = server->checkCredentials(username, password);
+                if (uniqueId != 0) {
+                    isLoggedIn = true;
+                    clientPro = server->getProfile(uniqueId);
 
-                QByteArray block;
-                QDataStream out(&block, QIODevice::WriteOnly);
-                out.setVersion(QDataStream::Qt_4_0);
+                    QByteArray block;
+                    QDataStream out(&block, QIODevice::WriteOnly);
+                    out.setVersion(QDataStream::Qt_4_0);
 
-                out << op;
-                out << uniqueId;
-                out << server->retrieveFiles();
+                    out << op;
+                    out << uniqueId;
+                    out << server->retrieveFiles();
 
-                tcpSock->write(block);
+                    tcpSock->write(block);
+                }
+                else {
+                    QByteArray block;
+                    QDataStream out(&block, QIODevice::WriteOnly);
+                    out.setVersion(QDataStream::Qt_4_0);
+                    out << op;
+
+                    out << uniqueId;
+                    tcpSock->write(block);
+                }
             }
-            else {
-                QByteArray block;
-                QDataStream out(&block, QIODevice::WriteOnly);
-                out.setVersion(QDataStream::Qt_4_0);
-                out << op;
-
-                out << uniqueId;
-                tcpSock->write(block);
-            }
-            qDebug() << "received '" << (char) op << "' message";
+            qDebug() << "received '" << char(op) << "' message";
             break;
         case 's':
+            in.startTransaction();
             in >> username;
             in >> password;
-            uniqueId = server->registerUser(username, password);
-            if (uniqueId != 0) {
-                isLoggedIn = true;
-                clientPro = server->getProfile(uniqueId);
+            if(in.commitTransaction()){
+                uniqueId = server->registerUser(username, password);
+                if (uniqueId != 0) {
+                    isLoggedIn = true;
+                    clientPro = server->getProfile(uniqueId);
 
-                QByteArray block;
-                QDataStream out(&block, QIODevice::WriteOnly);
-                out.setVersion(QDataStream::Qt_4_0);
+                    QByteArray block;
+                    QDataStream out(&block, QIODevice::WriteOnly);
+                    out.setVersion(QDataStream::Qt_4_0);
 
-                out << op;
-                out << uniqueId;
-                out << server->retrieveFiles();
+                    out << op;
+                    out << uniqueId;
+                    out << server->retrieveFiles();
 
-                tcpSock->write(block);
-            }
-            else {
-                QByteArray block;
-                QDataStream out(&block, QIODevice::WriteOnly);
-                out.setVersion(QDataStream::Qt_4_0);
+                    tcpSock->write(block);
+                }
+                else {
+                    QByteArray block;
+                    QDataStream out(&block, QIODevice::WriteOnly);
+                    out.setVersion(QDataStream::Qt_4_0);
 
-                out << op;
-                out << uniqueId;
-                tcpSock->write(block);
+                    out << op;
+                    out << uniqueId;
+                    tcpSock->write(block);
+                }
             }
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'o':
+            in.startTransaction();
             in >> filename;
-            workingOn = server->openFile(filename, this);
+            if(in.commitTransaction())
+                workingOn = server->openFile(filename, this);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'n':
+            in.startTransaction();
             in >> filename;
-            workingOn = server->newFile(filename, this);
+            if(in.commitTransaction())
+                workingOn = server->newFile(filename, this);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'u':
+            in.startTransaction();
             in >> user;
-            server->updateUser(user, uniqueId);
+            if(in.commitTransaction())
+                server->updateUser(user, uniqueId);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'm':
+            in.startTransaction();
             in >> msg;
-            workingOn->process(msg);
+            if(in.commitTransaction())
+                workingOn->process(msg);
             qDebug() << "received '" << (char) op << "' message";
             break;
 //        case 'c':
