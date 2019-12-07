@@ -324,6 +324,7 @@ void ClientConn::readAnyMessage()
                 out << uniqueId;
                 tcpSock->write(block);
             }
+            qDebug() << "received '" << (char) op << "' message";
             break;
         case 's':
             in >> username;
@@ -352,28 +353,34 @@ void ClientConn::readAnyMessage()
                 out << uniqueId;
                 tcpSock->write(block);
             }
+            qDebug() << "received '" << (char) op << "' message";
             break;
         case 'o':
             in >> filename;
             workingOn = server->openFile(filename, this);
+            qDebug() << "received '" << (char) op << "' message";
             break;
         case 'n':
             in >> filename;
             workingOn = server->newFile(filename, this);
+            qDebug() << "received '" << (char) op << "' message";
             break;
         case 'u':
             in >> user;
             server->updateUser(user, uniqueId);
+            qDebug() << "received '" << (char) op << "' message";
             break;
         case 'm':
             in >> msg;
             workingOn->process(msg);
+            qDebug() << "received '" << (char) op << "' message";
             break;
 //        case 'c':
 //            in >> nfy;
 //            workingOn->relay(nfy);
 //            break;
         }
+
     } while(in.commitTransaction());
 
 }
@@ -392,7 +399,7 @@ Document::Document(QString fname, ClientConn* client)
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Document::autoSave);
-    timer->start(1000 * 10);     // every 10000 ms = every 10s
+    timer->start(1000 * 1);     // every 10000 ms = every 1s
 }
 
 void Document::newSub(ClientConn *sub)
@@ -446,6 +453,8 @@ void Document::autoSave()
 {
     if(!isChanged)
         return;
+
+    qDebug() << "Saving...";
 
     //file.open(QFile::WriteOnly | QFile::Truncate);
     QDataStream out(&file);
