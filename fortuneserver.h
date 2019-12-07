@@ -73,13 +73,13 @@ public:
     QImage icon =  QImage();
 };
 
-class NotifyCursor{
-public:
-    NotifyCursor(int curs, quint32 u): cursPos(curs), uid(u){}
-    NotifyCursor(){}
-    int cursPos = 0;
-    quint32 uid = 0;
-};
+//class NotifyCursor{
+//public:
+//    NotifyCursor(int curs, quint32 u): cursPos(curs), uid(u){}
+//    NotifyCursor(){}
+//    int cursPos = 0;
+//    quint32 uid = 0;
+//};
 
 class Symbol {
 public:
@@ -163,11 +163,12 @@ public:
     std::vector<Symbol> _symbols;
     QMap<quint32, ClientConn *> _subs;
     void process(const Message&);
-    void relay(const NotifyCursor&);
+//    void relay(const NotifyCursor&);
     void newSub(ClientConn* sub);
 private:
     QFile file;
     QTimer *timer = nullptr;
+    bool isChanged = false;
 private slots:
     void autoSave();
     void byeUser(quint32 uid);

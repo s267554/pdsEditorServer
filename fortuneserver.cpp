@@ -75,12 +75,12 @@ QDataStream &operator>>(QDataStream& in, Message& rec){
 }
 
 
-QDataStream &operator<<(QDataStream& out, const NotifyCursor& sen){
-    return out << sen.uid << sen.cursPos;
-}
-QDataStream &operator>>(QDataStream& in, NotifyCursor& rec){
-    return in >> rec.uid >> rec.cursPos;
-}
+//QDataStream &operator<<(QDataStream& out, const NotifyCursor& sen){
+//    return out << sen.uid << sen.cursPos;
+//}
+//QDataStream &operator>>(QDataStream& in, NotifyCursor& rec){
+//    return in >> rec.uid >> rec.cursPos;
+//}
 
 QDataStream &operator<<(QDataStream& out, const User& sen){
     return out << sen.uid << sen.icon << sen.nick << sen.color << sen.startCursor;
@@ -290,7 +290,7 @@ void ClientConn::readAnyMessage()
 
     User user;
 
-    NotifyCursor nfy;
+//    NotifyCursor nfy;
     Message msg;
 
     do {
@@ -369,10 +369,10 @@ void ClientConn::readAnyMessage()
             in >> msg;
             workingOn->process(msg);
             break;
-        case 'c':
-            in >> nfy;
-            workingOn->relay(nfy);
-            break;
+//        case 'c':
+//            in >> nfy;
+//            workingOn->relay(nfy);
+//            break;
         }
     } while(in.commitTransaction());
 
@@ -388,11 +388,11 @@ Document::Document(QString fname, ClientConn* client)
     in.setVersion(QDataStream::Qt_4_0);
     in >> _symbols;
     newSub(client);
-    file.close();
+    //file.close();
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Document::autoSave);
-    timer->start(1000);
+    timer->start(1000 * 10);     // every 10000 ms = every 10s
 }
 
 void Document::newSub(ClientConn *sub)
@@ -444,13 +444,18 @@ void Document::newSub(ClientConn *sub)
 
 void Document::autoSave()
 {
-    file.open(QFile::WriteOnly | QFile::Truncate);
+    if(!isChanged)
+        return;
+
+    //file.open(QFile::WriteOnly | QFile::Truncate);
     QDataStream out(&file);
     out.setVersion(QDataStream::Qt_4_0);
 
     out << _symbols;
 
-    file.close();
+    isChanged = false;
+
+    //file.close();
 }
 
 void Document::byeUser(quint32 uid)
@@ -571,19 +576,21 @@ void Document::process(const Message& m)
             client->tcpSock->write(block);
         }
     }
+
+    isChanged = true;
 }
 
-void Document::relay(const NotifyCursor & nfy)
-{
-    for(auto client : _subs){
-        if(client->uniqueId != nfy.uid){
-            QByteArray block;
-            QDataStream out(&block, QIODevice::WriteOnly);
-            out.setVersion(QDataStream::Qt_4_0);
-            out << 'c';
+//void Document::relay(const NotifyCursor & nfy)
+//{
+//    for(auto client : _subs){
+//        if(client->uniqueId != nfy.uid){
+//            QByteArray block;
+//            QDataStream out(&block, QIODevice::WriteOnly);
+//            out.setVersion(QDataStream::Qt_4_0);
+//            out << 'c';
 
-            out << nfy;
-            client->tcpSock->write(block);
-        }
-    }
-}
+//            out << nfy;
+//            client->tcpSock->write(block);
+//        }
+//    }
+//}
