@@ -75,13 +75,6 @@ QDataStream &operator>>(QDataStream& in, Message& rec){
 }
 
 
-//QDataStream &operator<<(QDataStream& out, const NotifyCursor& sen){
-//    return out << sen.uid << sen.cursPos;
-//}
-//QDataStream &operator>>(QDataStream& in, NotifyCursor& rec){
-//    return in >> rec.uid >> rec.cursPos;
-//}
-
 QDataStream &operator<<(QDataStream& out, const User& sen){
     return out << sen.uid << sen.icon << sen.nick << sen.color << sen.startCursor;
 }
@@ -385,9 +378,10 @@ void ClientConn::readAnyMessage()
         case 'm':
             in.startTransaction();
             in >> msg;
-            if(in.commitTransaction())
+            if(in.commitTransaction()) {
+                qDebug() << "received '" << (char) op << "' message";
                 workingOn->process(msg);
-            qDebug() << "received '" << (char) op << "' message";
+            }
             break;
 //        case 'c':
 //            in >> nfy;
@@ -409,11 +403,11 @@ Document::Document(QString fname, ClientConn* client)
     in.setVersion(QDataStream::Qt_4_0);
     in >> _symbols;
     newSub(client);
-    //file.close();
+    file.close();
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Document::autoSave);
-    timer->start(1000 * 1);     // every 10000 ms = every 1s
+    timer->start(1000 * 1);     // every 1000 ms = every 1s
 }
 
 void Document::newSub(ClientConn *sub)
@@ -470,7 +464,7 @@ void Document::autoSave()
 
     qDebug() << "Saving...";
 
-    //file.open(QFile::WriteOnly | QFile::Truncate);
+    file.open(QFile::WriteOnly | QFile::Truncate);
     QDataStream out(&file);
     out.setVersion(QDataStream::Qt_4_0);
 
@@ -478,7 +472,7 @@ void Document::autoSave()
 
     isChanged = false;
 
-    //file.close();
+    file.close();
 }
 
 void Document::byeUser(quint32 uid)
@@ -495,8 +489,99 @@ void Document::byeUser(quint32 uid)
     }
 }
 
+int Document::fractcmp(std::vector<int> v1, std::vector<int> v2){
+    int digit = 0;
+    int cmp;
+
+    while (v1.size() > digit && v2.size() > digit)
+    {
+        cmp = v1.at(digit) - v2.at(digit);
+        if(cmp!=0)
+            return cmp;
+        digit++;
+    }
+
+    // until now vectors are equal but one may continue
+    if(v1.size() > digit && v1.at(digit) > 0)
+            return 1;
+
+    if(v2.size() > digit && v2.at(digit) == 0)
+            return -1;
+
+    // exactly the same
+    return 0;
+}
+
+
 void Document::process(const Message& m)
 {
+    for(auto client : _subs){
+        if(client->uniqueId != m.genFrom){
+            QByteArray block;
+            QDataStream out(&block, QIODevice::WriteOnly);
+            out.setVersion(QDataStream::Qt_4_0);
+            out << 'm';
+
+            out << m;
+            client->tcpSock->write(block);
+        }
+    }
+
+    //binary search
+    int lowbound;
+    int upbound;
+    int index;
+    Symbol curr;
+
+    /* let's look for syms to erase */
+    for(auto mi = m.symToRem.begin(); mi != m.symToRem.end(); mi++){
+
+        lowbound = 0;
+        upbound = _symbols.size();
+
+        while(lowbound < upbound){
+            index = (upbound+lowbound) /2;
+            curr = _symbols.at(index);
+
+            /* to check if it's the sym I'm looking for siteid & count are enough */
+            if (curr.siteid == mi->siteid && curr.count == mi->count) {
+
+                _symbols.erase(_symbols.begin()+index);
+
+
+                break;
+            }
+
+            if(fractcmp(curr.fract, mi->fract) > 0)
+                upbound = index;
+            else
+                lowbound = index;
+        }
+
+        //then it was already removed
+    }
+
+    /* let's look for syms to add */
+    for(auto mi = m.symToAdd.begin(); mi != m.symToAdd.end(); mi++){
+
+        lowbound = 0;
+        upbound = _symbols.size();
+
+        while(lowbound<upbound){
+
+            index = (upbound+lowbound) /2;
+            curr = _symbols.at(index);
+
+            if(fractcmp(curr.fract, mi->fract) > 0)
+                upbound = index;
+            else
+                lowbound = index+1;
+        }
+
+        _symbols.insert(_symbols.begin() + upbound, *mi);
+
+    }
+
 
 //    QString textA;
 //    for(auto s : m.symToAdd){
@@ -509,96 +594,6 @@ void Document::process(const Message& m)
 //        textR.append(s.c);
 //    }
 //    qDebug() << "rem is: " << textR;
-
-
-    for(auto mi = m.symToRem.begin(); mi != m.symToRem.end(); mi++){
-        int i = 0;
-        for (auto it = _symbols.begin(); it != _symbols.end(); it++) {
-            if (it->siteid == mi->siteid && it->count == mi->count) {
-
-                _symbols.erase(it);
-
-                break;
-            }
-            i++;
-        }
-    }
-
-    for(auto mi = m.symToAdd.begin(); mi != m.symToAdd.end(); mi++){
-        int i;
-        bool found = false;
-
-        for (i = 0; i < _symbols.size() && !found; i++) {
-            bool next = false;
-            auto curr = _symbols.at(i).fract;
-            int digit = 0;
-
-            while (!found && !next &&
-                        curr.size() > digit && mi->fract.size() > digit)
-            {
-                if (curr.at(digit) > mi->fract.at(digit)) {
-                    found = true;
-                    i--;
-                }
-                if(curr.at(digit) < mi->fract.at(digit)){
-                    next = true;
-                }
-                digit++;
-            }
-
-            // until now vectors are equal
-            if(!found && !next) {
-                // maybe one of the two vector continues
-                if(curr.size() > digit) {
-                    if(curr.at(digit) > 0){
-                        found = true;
-                        i--;
-                    }
-                }
-                else if (mi->fract.size() > digit) {
-                    if(mi->fract.at(digit) == 0){
-                        found = true;
-                        i--;
-                    }
-                }
-                else {
-                    // identical fract, then I look at _site Id than at count
-                    if(_symbols.at(i).siteid > mi->siteid){
-                        found = true;
-                        i--;
-                    }
-                    else if(_symbols.at(i).siteid < mi->siteid){
-                        found = true;
-                    }
-                    else {
-                        if(_symbols.at(i).count > mi->count){
-                            found = true;
-                            i--;
-                        }
-                        else if(_symbols.at(i).count < mi->count){
-                            found = true;
-                        }
-                        // I shouldn't be here, it's the same symbol!!!!
-                    }
-                }
-            }
-        }
-
-        _symbols.insert(_symbols.begin() + i, *mi);
-
-    }
-
-    for(auto client : _subs){
-        if(client->uniqueId != m.genFrom){
-            QByteArray block;
-            QDataStream out(&block, QIODevice::WriteOnly);
-            out.setVersion(QDataStream::Qt_4_0);
-            out << 'm';
-
-            out << m;
-            client->tcpSock->write(block);
-        }
-    }
 
     isChanged = true;
 }

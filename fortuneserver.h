@@ -165,10 +165,11 @@ public:
     void process(const Message&);
 //    void relay(const NotifyCursor&);
     void newSub(ClientConn* sub);
+    int fractcmp(std::vector<int>, std::vector<int>);
 private:
     QFile file;
     QTimer *timer = nullptr;
-    bool isChanged = false;
+    bool isChanged = true;
 private slots:
     void autoSave();
     void byeUser(quint32 uid);
