@@ -555,7 +555,7 @@ void Document::process(const Message& m)
             if(fractcmp(curr.fract, mi->fract) > 0)
                 upbound = index;
             else
-                lowbound = index;
+                lowbound = index +1;
         }
 
         //then it was already removed
