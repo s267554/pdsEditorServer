@@ -489,9 +489,12 @@ void Document::byeUser(quint32 uid)
     }
 }
 
-int Document::fractcmp(std::vector<int> v1, std::vector<int> v2){
+int Document::fractcmp(Symbol s1, Symbol s2){
     int digit = 0;
     int cmp;
+
+    auto v1 = s1.fract;
+    auto v2 = s2.fract;
 
     while (v1.size() > digit && v2.size() > digit)
     {
@@ -508,8 +511,16 @@ int Document::fractcmp(std::vector<int> v1, std::vector<int> v2){
     if(v2.size() > digit && v2.at(digit) == 0)
             return -1;
 
+    cmp = s1.siteid - s2.siteid;
+    if(cmp!=0)
+        return cmp;
+
+    cmp = s1.count - s2.count;
+    if(cmp!=0)
+        return cmp;
+
     // exactly the same
-    return 0;
+    return cmp; // that is 0
 }
 
 
@@ -552,7 +563,7 @@ void Document::process(const Message& m)
                 break;
             }
 
-            if(fractcmp(curr.fract, mi->fract) > 0)
+            if(fractcmp(curr, *mi) > 0)
                 upbound = index;
             else
                 lowbound = index +1;
@@ -572,7 +583,7 @@ void Document::process(const Message& m)
             index = (upbound+lowbound) /2;
             curr = _symbols.at(index);
 
-            if(fractcmp(curr.fract, mi->fract) > 0)
+            if(fractcmp(curr, *mi) > 0)
                 upbound = index;
             else
                 lowbound = index+1;

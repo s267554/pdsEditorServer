@@ -165,7 +165,7 @@ public:
     void process(const Message&);
 //    void relay(const NotifyCursor&);
     void newSub(ClientConn* sub);
-    int fractcmp(std::vector<int>, std::vector<int>);
+    int fractcmp(Symbol s1, Symbol s2);
 private:
     QFile file;
     QTimer *timer = nullptr;
