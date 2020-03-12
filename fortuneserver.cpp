@@ -260,6 +260,8 @@ ClientConn::ClientConn(int socketDescriptor, FortuneServer * server) : server(se
     tcpSock->setSocketDescriptor(socketDescriptor);
 
     connect(tcpSock, &QTcpSocket::readyRead, this, &ClientConn::readAnyMessage);
+    qDebug() << "Someone's in";
+
 
 }
 
@@ -286,6 +288,7 @@ void ClientConn::readAnyMessage()
 //    NotifyCursor nfy;
     Message msg;
 
+    qDebug() << "receiving some...";
     do {
         in.startTransaction();
         in >> op;
@@ -426,6 +429,7 @@ void Document::newSub(ClientConn *sub)
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
 
+    qDebug() << "sendin: " << _symbols.size() << " to new user";
     out << 't';
     out << _symbols;
     sub->tcpSock->write(block);
