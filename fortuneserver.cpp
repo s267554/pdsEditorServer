@@ -116,7 +116,7 @@ FortuneServer::FortuneServer(QObject *parent)
     : QTcpServer(parent)
 {
     QFile accounts("accounts");
-    if(accounts.open(QIODevice::ReadOnly)){
+    if(accounts.open(QIODevice::ReadWrite)){
         QDataStream in(&accounts);
         in.setVersion(QDataStream::Qt_4_0);
         in >> _accounts;
@@ -124,7 +124,7 @@ FortuneServer::FortuneServer(QObject *parent)
     accounts.close();
 
     QFile profiles("profiles");
-    if(profiles.open(QIODevice::ReadOnly)){
+    if(profiles.open(QIODevice::ReadWrite)){
         QDataStream in(&profiles);
         in.setVersion(QDataStream::Qt_4_0);
         in >> _profiles;
@@ -202,6 +202,7 @@ quint32 FortuneServer::registerUser(QString username, QString password)
 
 QStringList FortuneServer::retrieveFiles()
 {
+    QDir::current().mkdir("documents");
     QDir docs("documents");
     return docs.entryList();
 }
