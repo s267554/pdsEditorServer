@@ -183,7 +183,7 @@ quint32 FortuneServer::registerUser(QString username, QString password)
     // generate random profile
 
     User randU(uid,
-               QString(QRandomGenerator::global()->generate()),
+               username.chopped(6),
                QColor(QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128),
                0);
 
