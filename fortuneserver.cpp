@@ -288,104 +288,59 @@ void ClientConn::readAnyMessage()
 //    NotifyCursor nfy;
     Message msg;
 
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
     qDebug() << "receiving some...";
     do {
         in.startTransaction();
         in >> op;
         switch(op) {
-        in.startTransaction();
-        case 'l':
-            in >> username;
-            in >> password;
-            if(in.commitTransaction()){
-                uniqueId = server->checkCredentials(username, password);
-                if (uniqueId != 0) {
-                    isLoggedIn = true;
-                    clientPro = server->getProfile(uniqueId);
-
-                    QByteArray block;
-                    QDataStream out(&block, QIODevice::WriteOnly);
-                    out.setVersion(QDataStream::Qt_4_0);
-
+            in.startTransaction();
+        case 'l': case 's':
+                in >> username;
+                in >> password;
+                if(in.commitTransaction()){
+                    uniqueId = (op == 'l') ? server->checkCredentials(username, password) : server->registerUser(username, password);
                     out << op;
                     out << uniqueId;
-                    out << server->retrieveFiles();
-
+                    if (uniqueId != 0) {
+                        isLoggedIn = true;
+                        clientPro = server->getProfile(uniqueId);
+                        out << server->retrieveFiles();
+                    }
                     tcpSock->write(block);
                 }
-                else {
-                    QByteArray block;
-                    QDataStream out(&block, QIODevice::WriteOnly);
-                    out.setVersion(QDataStream::Qt_4_0);
-                    out << op;
-
-                    out << uniqueId;
-                    tcpSock->write(block);
+                break;
+            case 'o':
+                in >> filename;
+                if(in.commitTransaction())
+                    workingOn = server->openFile(filename, this);
+                break;
+            case 'n':
+                in >> filename;
+                if(in.commitTransaction())
+                    workingOn = server->newFile(filename, this);
+                break;
+            case 'u':
+                in >> user;
+                if(in.commitTransaction())
+                    server->updateUser(user, uniqueId);
+                break;
+            case 'm':
+                in >> msg;
+                if(in.commitTransaction()) {
+                    workingOn->process(msg);
                 }
-            }
-            qDebug() << "received '" << char(op) << "' message";
-            break;
-        case 's':
-            in >> username;
-            in >> password;
-            if(in.commitTransaction()){
-                uniqueId = server->registerUser(username, password);
-                if (uniqueId != 0) {
-                    isLoggedIn = true;
-                    clientPro = server->getProfile(uniqueId);
-
-                    QByteArray block;
-                    QDataStream out(&block, QIODevice::WriteOnly);
-                    out.setVersion(QDataStream::Qt_4_0);
-
-                    out << op;
-                    out << uniqueId;
-                    out << server->retrieveFiles();
-
-                    tcpSock->write(block);
-                }
-                else {
-                    QByteArray block;
-                    QDataStream out(&block, QIODevice::WriteOnly);
-                    out.setVersion(QDataStream::Qt_4_0);
-
-                    out << op;
-                    out << uniqueId;
-                    tcpSock->write(block);
-                }
-            }
-            qDebug() << "received '" << (char) op << "' message";
-            break;
-        case 'o':
-            in >> filename;
-            if(in.commitTransaction())
-                workingOn = server->openFile(filename, this);
-            qDebug() << "received '" << (char) op << "' message";
-            break;
-        case 'n':
-            in >> filename;
-            if(in.commitTransaction())
-                workingOn = server->newFile(filename, this);
-            qDebug() << "received '" << (char) op << "' message";
-            break;
-        case 'u':
-            in >> user;
-            if(in.commitTransaction())
-                server->updateUser(user, uniqueId);
-            qDebug() << "received '" << (char) op << "' message";
-            break;
-        case 'm':
-            in >> msg;
-            if(in.commitTransaction()) {
-                qDebug() << "received '" << (char) op << "' message";
-                workingOn->process(msg);
-            }
-            break;
-//        case 'c':
-//            in >> nfy;
-//            workingOn->relay(nfy);
-//            break;
+                break;
+//            case 'c':
+//                in >> nfy;
+//                workingOn->relay(nfy);
+//                break;
         }
+        if(in.status() == QDataStream::Ok)
+            qDebug() << "received '" << char(op) << "' message";
 
     } while(in.commitTransaction());
 
@@ -515,11 +470,8 @@ int Document::fractcmp(Symbol s1, Symbol s2){
         return cmp;
 
     cmp = s1.count - s2.count;
-    if(cmp!=0)
-        return cmp;
 
-    // exactly the same
-    return cmp; // that is 0
+    return cmp;
 }
 
 
