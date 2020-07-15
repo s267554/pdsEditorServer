@@ -183,7 +183,7 @@ quint32 FortuneServer::registerUser(QString username, QString password)
     // generate random profile
 
     User randU(uid,
-               username.chopped(6),
+               username.toLower(),
                QColor(QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128),
                0);
 
@@ -204,6 +204,7 @@ QStringList FortuneServer::retrieveFiles()
 {
     QDir::current().mkdir("documents");
     QDir docs("documents");
+    docs.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     return docs.entryList();
 }
 
