@@ -133,7 +133,6 @@ public:
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
 private:
-    QStringList _filenames;
     QMap<QString, Document *> _opendocs;
     QVector<Account> _accounts;
     QMap<quint32, User> _profiles;

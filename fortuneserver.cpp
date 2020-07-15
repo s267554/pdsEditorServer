@@ -131,7 +131,6 @@ FortuneServer::FortuneServer(QObject *parent)
     }
     profiles.close();
 
-    _filenames = retrieveFiles();
 }
 
 void FortuneServer::incomingConnection(qintptr socketDescriptor)
@@ -143,7 +142,7 @@ void FortuneServer::incomingConnection(qintptr socketDescriptor)
 quint32 FortuneServer::checkCredentials(QString username, QString password)
 {
     for (auto acc : _accounts) {
-        if (acc.username == username && acc.password == password) {        
+        if (acc.username == username && acc.password == password) {
             return acc.uinqueId;
         }
     }
@@ -226,7 +225,6 @@ Document * FortuneServer::newFile(QString fname, ClientConn* client)
     Document * doc = new Document(fname, client);
     _opendocs.insert(fname, doc);
 
-    _filenames.append(fname);
 
     return doc;
 
