@@ -293,8 +293,8 @@ void ClientConn::readAnyMessage()
         in.startTransaction();
         in >> op;
         switch(op) {
+        in.startTransaction();
         case 'l':
-            in.startTransaction();
             in >> username;
             in >> password;
             if(in.commitTransaction()){
@@ -326,7 +326,6 @@ void ClientConn::readAnyMessage()
             qDebug() << "received '" << char(op) << "' message";
             break;
         case 's':
-            in.startTransaction();
             in >> username;
             in >> password;
             if(in.commitTransaction()){
@@ -358,28 +357,24 @@ void ClientConn::readAnyMessage()
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'o':
-            in.startTransaction();
             in >> filename;
             if(in.commitTransaction())
                 workingOn = server->openFile(filename, this);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'n':
-            in.startTransaction();
             in >> filename;
             if(in.commitTransaction())
                 workingOn = server->newFile(filename, this);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'u':
-            in.startTransaction();
             in >> user;
             if(in.commitTransaction())
                 server->updateUser(user, uniqueId);
             qDebug() << "received '" << (char) op << "' message";
             break;
         case 'm':
-            in.startTransaction();
             in >> msg;
             if(in.commitTransaction()) {
                 qDebug() << "received '" << (char) op << "' message";
