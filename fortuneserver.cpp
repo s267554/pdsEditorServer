@@ -296,9 +296,8 @@ void ClientConn::readAnyMessage()
     do {
         in.startTransaction();
         in >> op;
-        switch(op) {
-            in.startTransaction();
-        case 'l': case 's':
+            switch(op) {
+            case 'l': case 's':
                 in >> username;
                 in >> password;
                 if(in.commitTransaction()){
@@ -338,11 +337,14 @@ void ClientConn::readAnyMessage()
 //                in >> nfy;
 //                workingOn->relay(nfy);
 //                break;
-        }
-        if(in.status() == QDataStream::Ok)
+            default:
+                in.abortTransaction();
+            }
+        if(in.Ok)
             qDebug() << "received '" << char(op) << "' message";
 
-    } while(in.commitTransaction());
+    } while(in.Ok);
+
 
 }
 
