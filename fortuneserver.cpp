@@ -184,7 +184,7 @@ quint32 FortuneServer::registerUser(QString username, QString password)
     User randU(uid,
                username.toLower(),
                QColor(QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128),
-               0);
+               128);
 
     _profiles.insert(uid,randU);
 
@@ -338,12 +338,12 @@ void ClientConn::readAnyMessage()
 //                workingOn->relay(nfy);
 //                break;
             default:
-                in.abortTransaction();
+                in.rollbackTransaction();
             }
-        if(in.Ok)
+        if(in.status() == QDataStream::Ok)
             qDebug() << "received '" << char(op) << "' message";
 
-    } while(in.Ok);
+    } while(in.status() == QDataStream::Ok);
 
 
 }
@@ -376,15 +376,6 @@ void Document::newSub(ClientConn *sub)
         byeUser(uid);
     });
 
-    // send content to new sub
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-
-    qDebug() << "sendin: " << _symbols.size() << " to new user";
-    out << 't';
-    out << _symbols;
-    sub->tcpSock->write(block);
 
     // send new sub's User to every sub
     QByteArray blockU;
@@ -410,6 +401,15 @@ void Document::newSub(ClientConn *sub)
         }
     }
 
+    // send content to new sub
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+
+    qDebug() << "sendin: " << _symbols.size() << " to new user";
+    out << 't';
+    out << _symbols;
+    sub->tcpSock->write(block);
 
 }
 
@@ -479,6 +479,7 @@ int Document::fractcmp(Symbol s1, Symbol s2){
 
 void Document::process(const Message& m)
 {
+
     for(auto client : _subs){
         if(client->uniqueId != m.genFrom){
             QByteArray block;
@@ -545,6 +546,15 @@ void Document::process(const Message& m)
         _symbols.insert(_symbols.begin() + upbound, *mi);
 
     }
+
+
+    // cerca errori
+
+//    for(auto it = _symbols.begin(); it != _symbols.end(); it++){
+//        if(it!=_symbols.end()-1)
+//            if(fractcmp(*it, *(it+1)) > 0)
+//                qDebug() << "error found!!!";
+//    }
 
 
 //    QString textA;
