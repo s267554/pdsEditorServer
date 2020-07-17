@@ -77,15 +77,17 @@ Dialog::Dialog(QWidget *parent)
     QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
     // use the first non-localhost IPv4 address
 
-    // OCIO USEFUL STUFF DO NOT DELETE I REPEATE DO NOT DELETE
-    for (int i = 0; i < ipAddressesList.size(); ++i) {
-        if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
-            ipAddressesList.at(i).toIPv4Address()) {
-            ipAddress = ipAddressesList.at(i).toString();
-            break;
-        }
-    }
+//    // OCIO USEFUL STUFF DO NOT DELETE I REPEATE DO NOT DELETE
+//    for (int i = 0; i < ipAddressesList.size(); ++i) {
+//        if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
+//            ipAddressesList.at(i).toIPv4Address()) {
+//            ipAddress = ipAddressesList.at(i).toString();
+//            break;
+//        }
+//    }
 
+
+    // I want localhost for now
     // if we did not find one, use IPv4 localhost
     if (ipAddress.isEmpty())
         ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
