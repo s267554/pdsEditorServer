@@ -324,8 +324,10 @@ void ClientConn::readAnyMessage()
                 break;
             case 'u':
                 in >> user;
-                if(in.commitTransaction())
+                if(in.commitTransaction()) {
                     server->updateUser(user, uniqueId);
+                    workingOn->relay(user);
+                }
                 break;
             case 'm':
                 in >> msg;
@@ -572,17 +574,16 @@ void Document::process(const Message& m)
     isChanged = true;
 }
 
-//void Document::relay(const NotifyCursor & nfy)
-//{
-//    for(auto client : _subs){
-//        if(client->uniqueId != nfy.uid){
-//            QByteArray block;
-//            QDataStream out(&block, QIODevice::WriteOnly);
-//            out.setVersion(QDataStream::Qt_4_0);
-//            out << 'c';
+void Document::relay(const User & u)
+{
+    for(auto client : _subs){
+            QByteArray block;
+            QDataStream out(&block, QIODevice::WriteOnly);
+            out.setVersion(QDataStream::Qt_4_0);
+            out << 'u';
 
-//            out << nfy;
-//            client->tcpSock->write(block);
-//        }
-//    }
-//}
+            out << u;
+            client->tcpSock->write(block);
+
+    }
+}

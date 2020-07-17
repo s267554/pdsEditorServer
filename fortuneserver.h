@@ -162,7 +162,7 @@ public:
     std::vector<Symbol> _symbols;
     QMap<quint32, ClientConn *> _subs;
     void process(const Message&);
-//    void relay(const NotifyCursor&);
+    void relay(const User&);
     void newSub(ClientConn* sub);
     int fractcmp(Symbol s1, Symbol s2);
 private:
