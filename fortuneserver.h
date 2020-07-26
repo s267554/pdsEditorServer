@@ -58,6 +58,8 @@
 #include <QFile>
 #include <QtNetwork>
 
+//#include <QSql>
+
 class ClientConn;
 class Document;
 
@@ -68,6 +70,7 @@ public:
     User(){}
     quint32 uid = 0;                    // se faccio map<int, user> non serve, la uso come chiave
     QString nick = "";
+    //QString uname ="";
     QColor color = QColor();
     int startCursor = 0;
     QImage icon =  QImage();
@@ -136,6 +139,7 @@ private:
     QMap<QString, Document *> _opendocs;
     QVector<Account> _accounts;
     QMap<quint32, User> _profiles;
+    //QSqlDatabase MyDB;
 };
 
 class ClientConn : public QObject {

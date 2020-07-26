@@ -55,6 +55,11 @@
 #include <QRandomGenerator>
 #include <QTimer>
 
+/*
+#define Path_to_DB "/Users/deusex/Codice/Qt/LoginDatabase/Database/PDS_Database.sqlite"
+// COMPUTER DI RICCARDO!!!
+*/
+
 
 QDataStream &operator<<(QDataStream& out, const Symbol& sen){
     QVector<int> qvect;
@@ -115,6 +120,29 @@ QDataStream &operator>>(QDataStream& stream, std::vector<T>& val){
 FortuneServer::FortuneServer(QObject *parent)
     : QTcpServer(parent)
 {
+
+    /*
+    myDB = QSqlDatabase::addDatabase("QSQLITE");
+        myDB.setDatabaseName(Path_to_DB);
+        QFileInfo checkFile(Path_to_DB);
+
+        if(checkFile.isFile())
+        {
+            qDebug() << "prova";
+
+            if(myDB.open())
+            {
+              //ui->connectionLabel->setText("[+]Connesso al Database.");
+              // Fill _profiles (no more _accounts?)
+            }
+        }else {
+              //ui->connectionLabel->setText("[!]Il Database non esiste");
+        }
+
+        qDebug() << " Server is Listen to host: ";
+        _server.listen(QHostAddress::Any, 4242);
+    */
+
     QFile accounts("accounts");
     if(accounts.open(QIODevice::ReadWrite)){
         QDataStream in(&accounts);
@@ -141,6 +169,29 @@ void FortuneServer::incomingConnection(qintptr socketDescriptor)
 
 quint32 FortuneServer::checkCredentials(QString username, QString password)
 {
+
+    /*
+        if(!myDB.isOpen()){
+            qDebug() << "Nessuna connessione al database";
+            return;
+        }
+
+        QSqlQuery qry("SELECT username,password FROM t_Utente WHERE username='" + username +
+                      "'AND password='" + password + "'");
+                      // Serve uniqueId
+
+            if(qry.next()){
+                //ui->labelResult->setText("[+] Username e Password validi!");
+                QString msg = "Username: " + qry.value(0).toString() + "\n" +
+                              "Password: " + qry.value(1).toString();
+
+                //const QString title("Accesso eseguito con successo!");
+                QMessageBox::warning(this,"Accesso eseguito con successo!",msg);
+            }else {
+            //ui->labelResult->setText("[-]Username o Password errati.");
+            }
+            */
+
     for (auto acc : _accounts) {
         if (acc.username == username && acc.password == password) {
             return acc.uinqueId;
@@ -162,6 +213,50 @@ quint32 FortuneServer::registerUser(QString username, QString password)
             uid = QRandomGenerator::global()->generate();
         }
     }
+    /*
+        if(!myDB.isOpen()){
+            qDebug() << "Nessuna connessione al database";
+            return;
+        }
+
+    do{
+            uid = QRandomGenerator::global()->generate();
+            QSqlQuery qry("SELECT uid FROM t_Utente WHERE uid='" + uid +"'")
+        } while (uid!=0 && qry.next())
+
+        QSqlQuery qry("SELECT username,password,nickname FROM t_Utente WHERE username='" + username +
+                      "'");
+
+            if(qry.next()){
+                QString msg = "Username: " + qry.value(0).toString() + "\n";
+
+                //QString title = "Credenziali di accesso duplicate!";
+                QMessageBox::warning(this,"Credenziali di accesso duplicate!",msg);
+
+            } else {
+                QSqlQuery query;
+                   query.prepare("INSERT INTO t_Utente (username, password, nickname) "
+                                 "VALUES (:username, :password, :nickname)");
+                                 // Serve uid
+
+                   query.bindValue(":username", username);
+                   query.bindValue(":password", password);
+                   query.bindValue(":nickname", nickname.isEmpty() ? "void" : nickname);
+                   // Serve uid
+                   query.exec();
+
+                   qry.exec();
+
+                   if(qry.next()){
+                       QString msg = "Username: " + qry.value(0).toString() + "\n" +
+                                     "Password: " + qry.value(1).toString() + "\n" +
+                                     "Nickname: " + qry.value(2).toString();
+
+                       //const QString title ("Benvenuto!");
+                       QMessageBox::warning(this,"Benvenuto!",msg);
+                   }
+            }
+        */
 
     Account a;
 
@@ -238,6 +333,19 @@ void FortuneServer::updateUser(User user, quint32 uid)
     else {
         _profiles.find(uid).value() = user;
     }
+
+    /*
+        if(!myDB.isOpen()){
+            qDebug() << "Nessuna connessione al database";
+            return;
+        }
+
+    QSqlQuery qry("UPDATE t_Utente SET username=" + user.uname + ", password=" password + ", nickname=" + user.nick + " WHERE uid='" + uid +"'")
+    // bind?
+    qry.exec();
+    if (qry.next())
+    ...
+    */
 
     QFile profiles("profiles");
     profiles.open(QIODevice::WriteOnly);
