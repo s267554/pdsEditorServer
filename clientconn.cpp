@@ -77,8 +77,10 @@ void Clientconn::readAnyMessage() {
                     break;
                 case 'u':
                     in >> user;
+                    in >> username;
+                    in >> password;
                     if(in.commitTransaction()) {
-                        server->updateUser(user, uniqueId);
+                        server->updateUser(user, uniqueId, username, password);
                         workingOn->relay(user);
                     }
                     break;

@@ -62,20 +62,20 @@ quint32 Server::checkCredentials(QString username, QString password)
         }
 
     qint32 uid=0;
-    QString nickname;
 
-        QSqlQuery qry("SELECT id,nickname FROM User WHERE username='" + username +
+        QSqlQuery qry("SELECT id,nickname,color FROM User WHERE username='" + username +
                       "'AND password='" + password + "'"); // Nickname?
 
             if(qry.next()){
                 uid = qry.value(0).toInt();
-                nickname = qry.value(1).toString();
-                User randU(uid,
+                QString nickname = qry.value(1).toString();
+                QString color = qry.value(2).toString();
+                User logging(uid,
                            nickname.toLower(),
-                           QColor(QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128),
+                           QColor(color),
                            128);
 
-                _profiles.insert(uid,randU);
+                _profiles.insert(uid,logging);
             }
             qDebug() << "Uid = " + QString(uid);
             return uid;
@@ -124,15 +124,17 @@ quint32 Server::registerUser(QString username, QString password, QString nicknam
             if(qry.next() || i==20){
                 return 0;
             } else {
+                QColor color (QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128);
                 QSqlQuery query;
-                   query.prepare("INSERT INTO User (id, username, password, nickname) "
-                                 "VALUES (:id, :username, :password, :nickname)");
+                   query.prepare("INSERT INTO User (id, username, password, nickname, color) "
+                                 "VALUES (:id, :username, :password, :nickname, :color)");
                                  // Serve uid
 
                    query.bindValue(":id", uid);
                    query.bindValue(":username", username);
                    query.bindValue(":password", password);
                    query.bindValue(":nickname", nickname.isEmpty() ? "void" : nickname);
+                   query.bindValue(":color", color.name());
                    query.exec();
 
                    qry.exec();
@@ -140,7 +142,7 @@ quint32 Server::registerUser(QString username, QString password, QString nicknam
                    if(qry.next()){
                        User randU(uid,
                                   nickname.toLower(),
-                                  QColor(QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128,QRandomGenerator::global()->generate() % 128 +128),
+                                  color,
                                   128);
 
                        _profiles.insert(uid,randU);
@@ -187,7 +189,7 @@ quint32 Server::registerUser(QString username, QString password, QString nicknam
 
 User Server::getProfile(quint32 uid) { return _profiles.find(uid).value(); }
 
-void Server::updateUser(User user, quint32 uid)
+void Server::updateUser(User user, quint32 uid, QString username, QString password)
 {
     if(_profiles.contains(uid)){
         _profiles.insert(uid, user);
@@ -196,19 +198,21 @@ void Server::updateUser(User user, quint32 uid)
         _profiles.find(uid).value() = user;
     }
 
-
-    /*
-        if(!myDB.isOpen()){
-            qDebug() << "Nessuna connessione al database";
+        if(!db.isOpen()){
+            qDebug() << "Connessione al database persa";
             return;
         }
 
-    QSqlQuery qry("UPDATE t_Utente SET username=" + user.uname + ", password=" password + ", nickname=" + user.nick + " WHERE uid='" + uid +"'")
-    // bind?
+    QSqlQuery qry;
+    qry.prepare("UPDATE User SET username=:uname, password=:password, nickname=:nick, color=:color, image=:image WHERE uid=:uid'");
+
+                   qry.bindValue(":username", username);
+                   qry.bindValue(":password", password);
+                   qry.bindValue(":nickname", user.nick.isEmpty() ? "void" : user.nick);
+                   qry.bindValue(":color", user.color.name());
+                   qry.bindValue(":image", user.icon.bits());
+
     qry.exec();
-    if (qry.next())
-    ...
-    */
 
 
     QFile profiles("profiles");

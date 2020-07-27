@@ -26,7 +26,7 @@ public:
     QStringList retrieveFiles();
     Document* openFile(QString fname, Clientconn* client);
     Document* newFile(QString fname, Clientconn* client);
-    void updateUser(User user, quint32 uid);
+    void updateUser(User user, quint32 uid, QString username, QString password);
     User getProfile(quint32);
     bool getDb();
 
