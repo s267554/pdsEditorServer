@@ -52,7 +52,7 @@
 #define DIALOG_H
 
 #include <QWidget>
-#include "fortuneserver.h"
+#include "server.h"
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -69,7 +69,7 @@ public:
 private:
     QLabel *statusLabel;
     QPushButton *quitButton;
-    FortuneServer server;
+    Server server;
 };
 
 #endif

@@ -48,8 +48,8 @@
 **
 ****************************************************************************/
 
-#ifndef FORTUNESERVER_H
-#define FORTUNESERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <QStringList>
 #include <QTcpServer>
@@ -121,11 +121,11 @@ public:
 };
 
 
-class FortuneServer : public QTcpServer
+class Server : public QTcpServer
 {
     Q_OBJECT
 public:
-    FortuneServer(QObject *parent = 0);
+    Server(QObject *parent = 0);
     quint32 checkCredentials(QString username, QString password);
     quint32 registerUser(QString username, QString password);
     QStringList retrieveFiles();
@@ -145,11 +145,11 @@ private:
 class ClientConn : public QObject {
     Q_OBJECT
 public:
-    ClientConn(int sd, FortuneServer * server);
+    ClientConn(int sd, Server * server);
     ~ClientConn();
     User clientPro;
     quint32 uniqueId;
-    FortuneServer * server = 0;
+    Server * server = 0;
     int socketDescriptor = 0;
     QTcpSocket * tcpSock = 0;
     bool isLoggedIn = false;

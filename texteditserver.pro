@@ -1,10 +1,10 @@
 QT += network widgets core
 
 HEADERS       = dialog.h \
-                fortuneserver.h
+    server.h
 SOURCES       = dialog.cpp \
-                fortuneserver.cpp \
-                main.cpp
+                main.cpp \
+                server.cpp
 
 
 

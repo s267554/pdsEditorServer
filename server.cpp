@@ -48,7 +48,7 @@
 **
 ****************************************************************************/
 
-#include "fortuneserver.h"
+#include "server.h"
 #include <stdlib.h>
 
 #include <QtNetwork>
@@ -117,7 +117,7 @@ QDataStream &operator>>(QDataStream& stream, std::vector<T>& val){
 }
 
 
-FortuneServer::FortuneServer(QObject *parent)
+Server::Server(QObject *parent)
     : QTcpServer(parent)
 {
 
@@ -161,13 +161,13 @@ FortuneServer::FortuneServer(QObject *parent)
 
 }
 
-void FortuneServer::incomingConnection(qintptr socketDescriptor)
+void Server::incomingConnection(qintptr socketDescriptor)
 {
     ClientConn * client = new ClientConn(socketDescriptor, this);
     // next pending connection LOOK QT DOCS
 }
 
-quint32 FortuneServer::checkCredentials(QString username, QString password)
+quint32 Server::checkCredentials(QString username, QString password)
 {
 
     /*
@@ -201,7 +201,7 @@ quint32 FortuneServer::checkCredentials(QString username, QString password)
     return 0;
 }
 
-quint32 FortuneServer::registerUser(QString username, QString password)
+quint32 Server::registerUser(QString username, QString password)
 {
     quint32 uid = QRandomGenerator::global()->generate();
 
@@ -294,7 +294,7 @@ quint32 FortuneServer::registerUser(QString username, QString password)
     return uid;
 }
 
-QStringList FortuneServer::retrieveFiles()
+QStringList Server::retrieveFiles()
 {
     QDir::current().mkdir("documents");
     QDir docs("documents");
@@ -302,7 +302,7 @@ QStringList FortuneServer::retrieveFiles()
     return docs.entryList();
 }
 
-Document * FortuneServer::openFile(QString fname, ClientConn* client)
+Document * Server::openFile(QString fname, ClientConn* client)
 {
     if(_opendocs.contains(fname)){
         _opendocs.find(fname).value()->newSub(client);
@@ -315,7 +315,7 @@ Document * FortuneServer::openFile(QString fname, ClientConn* client)
     }
 }
 
-Document * FortuneServer::newFile(QString fname, ClientConn* client)
+Document * Server::newFile(QString fname, ClientConn* client)
 {
     Document * doc = new Document(fname, client);
     _opendocs.insert(fname, doc);
@@ -325,7 +325,7 @@ Document * FortuneServer::newFile(QString fname, ClientConn* client)
 
 }
 
-void FortuneServer::updateUser(User user, quint32 uid)
+void Server::updateUser(User user, quint32 uid)
 {
     if(_profiles.contains(uid)){
         _profiles.insert(uid, user);
@@ -356,13 +356,13 @@ void FortuneServer::updateUser(User user, quint32 uid)
     profiles.close();
 }
 
-User FortuneServer::getProfile(quint32 uid)
+User Server::getProfile(quint32 uid)
 {
     return _profiles.find(uid).value();
 }
 
 
-ClientConn::ClientConn(int socketDescriptor, FortuneServer * server) : server(server)
+ClientConn::ClientConn(int socketDescriptor, Server * server) : server(server)
 {
     tcpSock = new QTcpSocket();
     tcpSock->setSocketDescriptor(socketDescriptor);

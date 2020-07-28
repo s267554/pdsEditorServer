@@ -54,7 +54,7 @@
 #include <stdlib.h>
 
 #include "dialog.h"
-#include "fortuneserver.h"
+#include "server.h"
 
 Dialog::Dialog(QWidget *parent)
     : QWidget(parent)
@@ -64,36 +64,42 @@ Dialog::Dialog(QWidget *parent)
     quitButton = new QPushButton(tr("Quit"));
     quitButton->setAutoDefault(false);
 
-//    if (!server.listen(QHostAddress::LocalHost, 40123)) {
-    if(!server.listen()){
-        QMessageBox::critical(this, tr("Threaded Fortune Server"),
+    QMessageBox messageBox(this);
+    messageBox.setText("The server needs an interface to start listening on");
+    messageBox.setInformativeText("Which one do you want to use?");
+    QAbstractButton *remoteButton = messageBox.addButton(tr("First non-localhost available"), QMessageBox::ActionRole);
+    QAbstractButton *localButton = messageBox.addButton(tr("Localhost"), QMessageBox::ActionRole);
+    messageBox.exec();
+
+    QHostAddress ipAddress;
+
+    if (messageBox.clickedButton() == localButton)
+        ipAddress = QHostAddress(QHostAddress::LocalHost);
+
+    if (messageBox.clickedButton() == remoteButton) {
+        QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+
+        for (int i = 0; i < ipAddressesList.size(); ++i) {
+            if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
+                ipAddressesList.at(i).toIPv4Address()) {
+                ipAddress = ipAddressesList.at(i);
+                break;
+            }
+        }
+    }
+
+
+    if(!server.listen(ipAddress)){
+        QMessageBox::critical(this, tr("TextEdit Server"),
                               tr("Unable to start the server: %1.")
                               .arg(server.errorString()));
         close();
         return;
     }
 
-    QString ipAddress;
-    QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-    // use the first non-localhost IPv4 address
-
-//    // OCIO USEFUL STUFF DO NOT DELETE I REPEATE DO NOT DELETE
-//    for (int i = 0; i < ipAddressesList.size(); ++i) {
-//        if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
-//            ipAddressesList.at(i).toIPv4Address()) {
-//            ipAddress = ipAddressesList.at(i).toString();
-//            break;
-//        }
-//    }
-
-
-    // I want localhost for now
-    // if we did not find one, use IPv4 localhost
-    if (ipAddress.isEmpty())
-        ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
     statusLabel->setText(tr("The server is running on\n\nIP: %1\nPort: %2\n\n"
-                            "Run the Fortune Client example now.")
-                         .arg(ipAddress).arg(server.serverPort()));
+                            "Run the TextEdit client now.")
+                         .arg(ipAddress.toString()).arg(server.serverPort()));
 
     // make label text selectable
     statusLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -109,5 +115,5 @@ Dialog::Dialog(QWidget *parent)
     mainLayout->addWidget(statusLabel);
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
-    setWindowTitle(tr("Threaded Fortune Server"));
+    setWindowTitle(tr("TextEdit Server"));
 }
