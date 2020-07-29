@@ -63,17 +63,32 @@ quint32 Server::checkCredentials(QString username, QString password)
 
     qint32 uid=0;
 
-        QSqlQuery qry("SELECT id,nickname,color FROM User WHERE username='" + username +
+        QSqlQuery qry("SELECT id, nickname, color, image FROM User WHERE username='" + username +
                       "'AND password='" + password + "'"); // Nickname?
 
             if(qry.next()){
                 uid = qry.value(0).toInt();
                 QString nickname = qry.value(1).toString();
                 QString color = qry.value(2).toString();
+                QByteArray *ba = new QByteArray (qry.value(3).toByteArray());
+                //QBuffer buffer(ba);
+                //buffer.open(QIODevice::ReadWrite);
+                QImage icon = QImage();
+                //QImage icon = QImage((uchar*)ba->data(), 128, 32, 32, QImage::Format_RGB32);
+                //QImage icon (&buffer, 32, 32, QImage::Format_RGB32);
+                //QImage icon = QImage(static_cast<const uchar*>(qry.value(3).toByteArray().data()), 32, 32, QImage::Format_RGB32);
+                icon.loadFromData(*ba, "PNG");
+                //icon.loadFromData((qry.value(3).toByteArray()), "PNG");
+                //icon.loadFromData((qry.value(3).toByteArray().data()), "PNG");
+                if(icon.isNull())
+                    qDebug() << "PNG null";
+                if (ba->isEmpty())
+                    qDebug() << "No bytearray";
                 User logging(uid,
                            nickname.toLower(),
                            QColor(color),
                            128);
+                logging.icon = icon;
 
                 _profiles.insert(uid,logging);
             }
@@ -200,27 +215,58 @@ void Server::updateUser(User user, quint32 uid, QString username, QString passwo
 
         if(!db.isOpen()){
             qDebug() << "Connessione al database persa";
+            //_profiles.remove(uid);
             return;
         }
 
     QSqlQuery qry;
-    qry.prepare("UPDATE User SET username=:uname, password=:password, nickname=:nick, color=:color, image=:image WHERE uid=:uid'");
 
-                   qry.bindValue(":username", username);
-                   qry.bindValue(":password", password);
-                   qry.bindValue(":nickname", user.nick.isEmpty() ? "void" : user.nick);
-                   qry.bindValue(":color", user.color.name());
-                   qry.bindValue(":image", user.icon.bits());
+    qDebug() << "Provo query";
 
-    qry.exec();
+    if (username != "Unchanged" && password != "Unchanged"){
+        qry.prepare("UPDATE User SET username=:uname, password=:password, nickname=:nick, color=:color, image=:image WHERE id=:uid");
 
+        qry.bindValue(":uname", username);
+        qry.bindValue(":password", password);
+    } else if (username == "Unchanged"){
+        if (password != "Unchanged"){
+            qry.prepare("UPDATE User SET password=:password, nickname=:nick, color=:color, image=:image WHERE id=:uid");
+            qry.bindValue(":password", password);
+        } else qry.prepare("UPDATE User SET nickname=:nick, color=:color, image=:image WHERE id=:uid");
+    } else if (password == "Unchanged"){
+        qry.prepare("UPDATE User SET username=:uname, nickname=:nick, color=:color, image=:image WHERE id=:uid");
 
-    QFile profiles("profiles");
+        qry.bindValue(":username", username);
+    }
+
+    //qry.prepare("UPDATE User SET nickname=:nick WHERE uid=:uid");
+    qry.bindValue(":nickname", user.nick.isEmpty() ? "void" : user.nick);
+    qry.bindValue(":color", user.color.name());
+    //QBuffer buffer;
+    //buffer.open(QIODevice::WriteOnly);
+    //user.icon.save(&buffer, "PNG");
+    QByteArray ba;
+    QBuffer buff(&ba);
+    buff.open(QIODevice::WriteOnly);
+    user.icon.save(&buff, "PNG");
+
+    //user.icon = user.icon.convertToFormat(QImage::Format_RGB32);
+    //QByteArray ba = QByteArray::fromRawData((const char*)user.icon.bits(), user.icon.sizeInBytes());
+    qry.bindValue(":image", buff.data());
+    qry.bindValue(":uid", uid);
+
+    if(qry.exec())
+        qDebug() << "Query eseguita";
+    qDebug() << user.icon.bytesPerLine();
+
+    // Check?
+
+    /*QFile profiles("profiles");
     profiles.open(QIODevice::WriteOnly);
     QDataStream out(&profiles);
     out.setVersion(QDataStream::Qt_4_0);
     out << _profiles;
-    profiles.close();
+    profiles.close();*/
 }
 
 QStringList Server::retrieveFiles()
@@ -252,6 +298,26 @@ Document * Server::newFile(QString fname, Clientconn* client)
     return doc;
 
 }
+
+/*int Server::openImage(User u)
+{
+    QDir::current().mkdir("images");
+    QDir icons("images");
+    u.icon = QImage(icons.entryList().filter(QString(u.uid)).at(0));
+    if (!u.icon.isNull())
+        return 0;
+    return 1;
+}
+
+int Server::newImage(User u)
+{
+    const QString name(u.uid);
+    QFile imgFile (name);
+    imgFile.open(QIODevice::WriteOnly);
+    if (u.icon.save(&imgFile, "PNG"))
+        return 0;
+    return 1;
+}*/
 
 void Server::incomingConnection(qintptr socketDescriptor)
 {

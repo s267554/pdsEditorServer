@@ -29,6 +29,8 @@ public:
     void updateUser(User user, quint32 uid, QString username, QString password);
     User getProfile(quint32);
     bool getDb();
+    //int newImage (User u);
+    //int openImage (User u);
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
